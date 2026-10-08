@@ -1,0 +1,68 @@
+services:
+  spire-server:
+    image: ghcr.io/spiffe/spire-server:1.15.3
+    volumes:
+      - ./server.conf:/opt/spire/conf/server/server.conf:ro
+      - spire-server-data:/opt/spire/.data
+    networks:
+      spire:
+    ports:
+      - 8081:8081/tcp
+    command: []
+    pre_start:
+      - command: []
+    healthcheck:
+      test:
+        - CMD
+        - spire-server
+        - healthcheck
+      interval: 30s
+      timeout: 30s
+      start_period: 0s
+      start_interval: 5s
+      retries: 3
+
+  http-echo:
+    image: hashicorp/http-echo
+    command:
+      - -status-code=200
+      - -text=""
+    profiles:
+      - server-node
+
+  spire-agent:
+    image: ghcr.io/spiffe/spire-agent:1.15.3
+    volumes:
+      - ./agent.conf:/opt/spire/conf/agent/agent.conf:ro
+      - spire-agent-data:/opt/spire/.data
+    networks:
+      spire:
+    command: []
+    healthcheck:
+      test:
+        - CMD
+        - spire-agent
+        - healthcheck
+      interval: 30s
+      timeout: 30s
+      start_period: 0s
+      start_interval: 5s
+      retries: 3
+    profiles:
+      - server-node
+
+  spiffe-helper:
+    image: ghcr.io/spiffe/spiffe-helper:0.12.1
+    volumes:
+      - ./helper.conf:/helper.conf:ro
+    command: []
+    profiles:
+      - client-node
+
+volumes:
+  spire-server-data:
+  spire-agent-data:
+
+networks:
+  spire:
+    driver: bridge
